@@ -44,13 +44,11 @@ interface FilterState {
 }
 
 interface AppState {
-  // User state
   user: User | null;
   subscription: Subscription | null;
   setUser: (user: User | null) => void;
   setSubscription: (subscription: Subscription | null) => void;
 
-  // Outages state
   outages: Outage[];
   filteredOutages: Outage[];
   selectedOutage: Outage | null;
@@ -58,7 +56,6 @@ interface AppState {
   setOutages: (outages: Outage[]) => void;
   setSelectedOutage: (outage: Outage | null) => void;
 
-  // UI state
   viewMode: "map" | "list";
   mapType: "leaflet" | "mapbox" | "google";
   loading: boolean;
@@ -70,7 +67,6 @@ interface AppState {
   setError: (error: string | null) => void;
   setShowPaymentModal: (show: boolean) => void;
 
-  // Filters
   filters: FilterState;
   setSearchQuery: (query: string) => void;
   setSelectedService: (service: string) => void;
@@ -79,158 +75,61 @@ interface AppState {
   setShowOnlyUserDistrict: (show: boolean) => void;
   resetFilters: () => void;
 
-  // Actions
   applyFilters: () => void;
   fetchOutages: () => Promise<void>;
 }
 
-// Helper function to transform API data to our Outage format
 function transformApiToOutage(apiData: any): Outage {
-  // Format dates
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return (
-        date.toLocaleDateString("bg-BG", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }) + " ч."
-      );
-    } catch {
-      return dateString; // Return original if parsing fails
-    }
-  };
+  const validServiceTypes = ["water", "electricity", "heating"] as const;
 
-  // Map service types from JSON to our format
-  const serviceTypeMap: { [key: string]: "water" | "electricity" | "heating" } =
-    {
-      water: "water",
-      electricity: "electricity",
-      heating: "heating",
-    };
+  const rawServiceType =
+    apiData.serviceType || apiData.service_type || apiData.type || "water";
 
-  // Extract district from location or use fallback
-  const district =
-    apiData.location?.district || apiData.district || "Неизвестен";
-
-  // Extract area from location or use fallback
-  const area =
-    apiData.affectedArea ||
-    apiData.location?.address ||
-    apiData.area ||
-    "Неизвестна зона";
+  const serviceType = validServiceTypes.includes(rawServiceType)
+    ? rawServiceType
+    : "water";
 
   return {
     id: apiData.id,
     source: apiData.source,
-    area: area,
-    type:
-      apiData.category === "emergency"
-        ? "Аварийно спиране"
-        : "Планирано спиране",
+    area: apiData.affectedArea || apiData.location?.address || apiData.area || "Неизвестна зона",
+    type: apiData.category === "emergency" ? "Аварийно спиране" : "Планирано спиране",
     category: apiData.category,
     description: apiData.description,
-    start: formatDate(apiData.startTime),
-    end: formatDate(apiData.endTime),
+    start: apiData.startTime,
+    end: apiData.endTime,
     timestamp: apiData.startTime,
-    serviceType:
-      serviceTypeMap[apiData.serviceType] ||
-      serviceTypeMap[apiData.type] ||
-      "water",
-    district: district,
+    serviceType,
+    district: apiData.location?.district || apiData.district || "Неизвестен",
     severity: apiData.severity || apiData.priority || "medium",
   };
 }
 
-// Helper function to load outages from API
 async function loadOutagesFromApi(): Promise<Outage[]> {
   try {
     const response = await fetch("/api/outages");
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const result = await response.json();
-
     if (!result.success || !Array.isArray(result.data)) {
       throw new Error("Invalid API response format");
     }
 
-    // Transform each API entry to our Outage format
-    const outages = result.data.map(transformApiToOutage);
-
-    return outages;
+    return result.data.map(transformApiToOutage);
   } catch (error) {
     console.error("Error loading outages from API:", error);
-    // Return fallback data if API fails
-    return getFallbackOutages();
+    return [];
   }
-}
-
-// Fallback data in case API fails
-function getFallbackOutages(): Outage[] {
-  return [
-    {
-      id: "1",
-      source: "Софийска вода",
-      area: "кв. Център - ул. Витоша от пл. Св. Неделя до бул. Патриарх Евтимий",
-      type: "Аварийно спиране",
-      category: "emergency",
-      description:
-        "Ремонт на главен водопровод поради пукнатина. Засегнати са жилищни и търговски обекти.",
-      start: "9 Юни 2025, 09:00 ч.",
-      end: "9 Юни 2025, 18:00 ч.",
-      timestamp: "2025-06-09T09:00:00",
-      serviceType: "water",
-      district: "Център",
-      severity: "high",
-    },
-    {
-      id: "2",
-      source: "ЧЕЗ България",
-      area: "ж.к. Младост 1А - блокове 101-110",
-      type: "Аварийно спиране",
-      category: "emergency",
-      description:
-        "Авария в трафопост поради претоварване. Работи се по възстановяване на електрозахранването.",
-      start: "9 Юни 2025, 14:30 ч.",
-      end: "9 Юни 2025, 20:00 ч.",
-      timestamp: "2025-06-09T14:30:00",
-      serviceType: "electricity",
-      district: "Младост",
-      severity: "high",
-    },
-    {
-      id: "3",
-      source: "Топлофикация София",
-      area: "ж.к. Люлин 5 - блокове 501-515",
-      type: "Аварийно спиране",
-      category: "emergency",
-      description:
-        "Авария на топлопровод. Временно спиране на топлата вода и отоплението.",
-      start: "9 Юни 2025, 08:00 ч.",
-      end: "10 Юни 2025, 16:00 ч.",
-      timestamp: "2025-06-09T08:00:00",
-      serviceType: "heating",
-      district: "Люлин",
-      severity: "high",
-    },
-  ];
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      // User state
       user: null,
       subscription: null,
       setUser: (user) => set({ user }),
       setSubscription: (subscription) => set({ subscription }),
 
-      // Outages state
       outages: [],
       filteredOutages: [],
       selectedOutage: null,
@@ -238,7 +137,6 @@ export const useAppStore = create<AppState>()(
       setOutages: (outages) => set({ outages }),
       setSelectedOutage: (outage) => set({ selectedOutage: outage }),
 
-      // UI state
       viewMode: "map",
       mapType: "google",
       loading: false,
@@ -250,7 +148,6 @@ export const useAppStore = create<AppState>()(
       setError: (error) => set({ error }),
       setShowPaymentModal: (show) => set({ showPaymentModal: show }),
 
-      // Filters
       filters: {
         searchQuery: "",
         selectedService: "all",
@@ -258,26 +155,11 @@ export const useAppStore = create<AppState>()(
         selectedType: "all",
         showOnlyUserDistrict: true,
       },
-      setSearchQuery: (query) =>
-        set((state) => ({
-          filters: { ...state.filters, searchQuery: query },
-        })),
-      setSelectedService: (service) =>
-        set((state) => ({
-          filters: { ...state.filters, selectedService: service },
-        })),
-      setSelectedCategory: (category) =>
-        set((state) => ({
-          filters: { ...state.filters, selectedCategory: category },
-        })),
-      setSelectedType: (type) =>
-        set((state) => ({
-          filters: { ...state.filters, selectedType: type },
-        })),
-      setShowOnlyUserDistrict: (show) =>
-        set((state) => ({
-          filters: { ...state.filters, showOnlyUserDistrict: show },
-        })),
+      setSearchQuery: (query) => set((state) => ({ filters: { ...state.filters, searchQuery: query } })),
+      setSelectedService: (service) => set((state) => ({ filters: { ...state.filters, selectedService: service } })),
+      setSelectedCategory: (category) => set((state) => ({ filters: { ...state.filters, selectedCategory: category } })),
+      setSelectedType: (type) => set((state) => ({ filters: { ...state.filters, selectedType: type } })),
+      setShowOnlyUserDistrict: (show) => set((state) => ({ filters: { ...state.filters, showOnlyUserDistrict: show } })),
       resetFilters: () =>
         set((state) => ({
           filters: {
@@ -289,102 +171,54 @@ export const useAppStore = create<AppState>()(
           },
         })),
 
-      // Actions
       applyFilters: () => {
         const { outages, user, filters } = get();
-        let filtered = [...outages];
+        const { selectedService, selectedCategory, selectedType, searchQuery, showOnlyUserDistrict } = filters;
+        const normalizedQuery = searchQuery.trim().toLowerCase();
 
-        if (user && filters.showOnlyUserDistrict) {
-          filtered = filtered.filter(
-            (outage) =>
-              outage.district.toLowerCase() === user.district.toLowerCase()
-          );
-        }
-
-        if (filters.searchQuery.trim()) {
-          const query = filters.searchQuery.toLowerCase().trim();
-          filtered = filtered.filter(
-            (outage) =>
-              outage.area.toLowerCase().includes(query) ||
-              outage.description.toLowerCase().includes(query) ||
-              outage.district.toLowerCase().includes(query)
-          );
-        }
-
-        if (filters.selectedService !== "all") {
-          filtered = filtered.filter(
-            (outage) => outage.serviceType === filters.selectedService
-          );
-        }
-
-        if (filters.selectedCategory !== "all") {
-          filtered = filtered.filter(
-            (outage) => outage.category === filters.selectedCategory
-          );
-        }
-
-        if (filters.selectedType !== "all") {
-          if (filters.selectedType === "emergency") {
-            filtered = filtered.filter(
-              (outage) =>
-                outage.type && outage.type.toLowerCase().includes("аварийно")
-            );
-          } else if (filters.selectedType === "scheduled") {
-            filtered = filtered.filter(
-              (outage) =>
-                !outage.type || !outage.type.toLowerCase().includes("аварийно")
-            );
-          }
-        }
+        const filtered = outages.filter((outage) => {
+          if (user && showOnlyUserDistrict && outage.district.toLowerCase() !== user.district.toLowerCase()) return false;
+          if (
+            normalizedQuery &&
+            !outage.area.toLowerCase().includes(normalizedQuery) &&
+            !outage.description.toLowerCase().includes(normalizedQuery) &&
+            !outage.district.toLowerCase().includes(normalizedQuery)
+          ) return false;
+          if (selectedService !== "all" && outage.serviceType !== selectedService) return false;
+          if (selectedCategory !== "all" && outage.category !== selectedCategory) return false;
+          const isEmergency = outage.type.toLowerCase().includes("аварийно");
+          if (selectedType === "emergency" && !isEmergency) return false;
+          if (selectedType === "scheduled" && isEmergency) return false;
+          return true;
+        });
 
         set({ filteredOutages: filtered });
 
-        // Update user notifications
         if (user && get().subscription?.active) {
-          const userDistrictOutages = outages.filter(
-            (outage) =>
-              outage.district.toLowerCase() === user.district.toLowerCase() &&
-              outage.severity === "high"
-          );
-          set({ userNotifications: userDistrictOutages });
+          set({
+            userNotifications: filtered.filter(
+              (o) => o.district.toLowerCase() === user.district.toLowerCase() && o.severity === "high"
+            ),
+          });
         } else {
           set({ userNotifications: [] });
         }
       },
 
       fetchOutages: async () => {
-        const {
-          setLoading,
-          setError,
-          setOutages,
-          applyFilters,
-          setSelectedOutage,
-        } = get();
+        const { setLoading, setError, setOutages, applyFilters, setSelectedOutage } = get();
 
         try {
           setLoading(true);
           setError(null);
 
-          // Load outages from API
           const outagesData = await loadOutagesFromApi();
-
           setOutages(outagesData);
-
-          if (outagesData.length > 0) {
-            setSelectedOutage(outagesData[0]);
-          }
-
+          if (outagesData.length > 0) setSelectedOutage(outagesData[0]);
           applyFilters();
         } catch (error) {
           console.error("Error fetching outages:", error);
           setError("Възникна грешка при зареждане на данните");
-
-          // Use fallback data on error
-          const fallbackData = getFallbackOutages();
-          setOutages(fallbackData);
-          if (fallbackData.length > 0) {
-            setSelectedOutage(fallbackData[0]);
-          }
           applyFilters();
         } finally {
           setLoading(false);

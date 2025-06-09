@@ -102,7 +102,6 @@ export function Filters() {
           </SelectContent>
         </Select>
 
-        {/* Category Filter */}
         <Select
           value={filters.selectedCategory}
           onValueChange={handleCategoryChange}
@@ -117,7 +116,7 @@ export function Filters() {
             <SelectItem value="emergency" className="rounded-lg">
               🚨 Аварийни
             </SelectItem>
-            <SelectItem value="maintenance" className="rounded-lg">
+            <SelectItem value="scheduled" className="rounded-lg">
               🔧 Планирани
             </SelectItem>
           </SelectContent>
@@ -141,7 +140,6 @@ export function Filters() {
           </SelectContent>
         </Select>
 
-        {/* Reset Button */}
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             variant="outline"

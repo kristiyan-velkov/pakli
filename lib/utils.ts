@@ -1,12 +1,12 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-import type { Outage } from "./store"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+import type { Outage } from "./store";
 
 /**
  * Combines class names with Tailwind's merge utility
  */
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -15,13 +15,13 @@ export function cn(...inputs: ClassValue[]) {
 export function getServiceIconName(serviceType: string): string {
   switch (serviceType) {
     case "water":
-      return "droplets"
+      return "droplets";
     case "electricity":
-      return "zap"
+      return "zap";
     case "heating":
-      return "thermometer"
+      return "thermometer";
     default:
-      return "activity"
+      return "activity";
   }
 }
 
@@ -31,13 +31,13 @@ export function getServiceIconName(serviceType: string): string {
 export function getServiceName(serviceType: string): string {
   switch (serviceType) {
     case "water":
-      return "Вода"
+      return "Вода";
     case "electricity":
-      return "Ток"
+      return "Ток";
     case "heating":
-      return "Топлофикация"
+      return "Топлофикация";
     default:
-      return "Неизвестно"
+      return "Неизвестно";
   }
 }
 
@@ -47,13 +47,13 @@ export function getServiceName(serviceType: string): string {
 export function getServiceColor(serviceType: string): string {
   switch (serviceType) {
     case "water":
-      return "blue"
+      return "blue";
     case "electricity":
-      return "yellow"
+      return "yellow";
     case "heating":
-      return "red"
+      return "red";
     default:
-      return "gray"
+      return "gray";
   }
 }
 
@@ -63,13 +63,13 @@ export function getServiceColor(serviceType: string): string {
 export function getSeverityName(severity: string): string {
   switch (severity) {
     case "high":
-      return "Висок"
+      return "Висок";
     case "medium":
-      return "Среден"
+      return "Среден";
     case "low":
-      return "Нисък"
+      return "Нисък";
     default:
-      return "Неизвестен"
+      return "Неизвестен";
   }
 }
 
@@ -78,11 +78,11 @@ export function getSeverityName(severity: string): string {
  */
 export function getOutageTypeName(type: string): string {
   if (type.toLowerCase().includes("аварийно")) {
-    return "Авария"
+    return "Авария";
   } else if (type.toLowerCase().includes("планирано")) {
-    return "Планирано"
+    return "Планирано";
   } else {
-    return "В ход"
+    return "В ход";
   }
 }
 
@@ -91,12 +91,21 @@ export function getOutageTypeName(type: string): string {
  */
 export function getOutageStatistics(outages: Outage[]) {
   return {
-    emergency: outages.filter((outage) => outage.type.toLowerCase().includes("аварийно")).length,
-    scheduled: outages.filter((outage) => outage.type.toLowerCase().includes("планирано")).length,
+    emergency: outages.filter((outage) =>
+      outage.type?.toLowerCase().includes("аварийно")
+    ).length,
+
+    scheduled: outages.filter((outage) =>
+      outage.type?.toLowerCase().includes("планирано")
+    ).length,
+
     water: outages.filter((outage) => outage.serviceType === "water").length,
-    electricity: outages.filter((outage) => outage.serviceType === "electricity").length,
-    heating: outages.filter((outage) => outage.serviceType === "heating").length,
-  }
+    electricity: outages.filter(
+      (outage) => outage.serviceType === "electricity"
+    ).length,
+    heating: outages.filter((outage) => outage.serviceType === "heating")
+      .length,
+  };
 }
 
 /**
@@ -123,23 +132,26 @@ export const sofiaDistricts = {
   Искър: { lat: 42.65, lng: 23.4, zoom: 14 },
   Панчарево: { lat: 42.5833, lng: 23.4167, zoom: 14 },
   Банкя: { lat: 42.7167, lng: 23.15, zoom: 14 },
-}
+};
 
 /**
  * Get coordinates for an outage based on area text
  */
 export function getOutageCoordinates(outage: Outage) {
-  const area = outage.area.toLowerCase()
-  const district = outage.district.toLowerCase()
+  const area = outage.area.toLowerCase();
+  const district = outage.district.toLowerCase();
 
   // Try to match district names
   for (const [districtName, coords] of Object.entries(sofiaDistricts)) {
-    if (district.includes(districtName.toLowerCase()) || area.includes(districtName.toLowerCase())) {
+    if (
+      district.includes(districtName.toLowerCase()) ||
+      area.includes(districtName.toLowerCase())
+    ) {
       return {
         lat: coords.lat + (Math.random() - 0.5) * 0.01, // Add small random offset
         lng: coords.lng + (Math.random() - 0.5) * 0.01,
         district: districtName,
-      }
+      };
     }
   }
 
@@ -148,7 +160,7 @@ export function getOutageCoordinates(outage: Outage) {
     lat: 42.6977 + (Math.random() - 0.5) * 0.02,
     lng: 23.3219 + (Math.random() - 0.5) * 0.02,
     district: "София",
-  }
+  };
 }
 
 /**
@@ -156,15 +168,15 @@ export function getOutageCoordinates(outage: Outage) {
  */
 export function formatDate(dateString: string): string {
   try {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return date.toLocaleDateString("bg-BG", {
       year: "numeric",
       month: "long",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    })
+    });
   } catch (e) {
-    return dateString
+    return dateString;
   }
 }
