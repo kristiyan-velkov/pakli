@@ -13,14 +13,14 @@ import {
 
 export function StatsSection() {
   const {
-    outages,
+    filteredOutages,
     filters,
     setSelectedType,
     setSelectedService,
     applyFilters,
   } = useAppStore();
 
-  const stats = getOutageStatistics(outages);
+  const stats = getOutageStatistics(filteredOutages);
 
   const statsCards = [
     {
@@ -92,7 +92,7 @@ export function StatsSection() {
       },
     },
     {
-      title: "Топло",
+      title: "Топла вода",
       value: stats.heating,
       icon: Thermometer,
       color: "red",
@@ -135,12 +135,10 @@ export function StatsSection() {
               }
             `}
             >
-              {/* Background Pattern */}
               <div className="absolute inset-0 opacity-5">
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white to-transparent"></div>
               </div>
 
-              {/* Content */}
               <div className="relative p-6">
                 <div className="flex items-center justify-between mb-3">
                   <div
@@ -184,7 +182,6 @@ export function StatsSection() {
                   </p>
                 </div>
 
-                {/* Hover Effect */}
                 <div
                   className={`
                   absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300

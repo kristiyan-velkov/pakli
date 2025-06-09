@@ -45,7 +45,7 @@ export function Hero() {
 
             <div className="relative lg:block hidden">
               <div className="relative">
-                <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                <div className="bg-white/95 rounded-2xl shadow-2xl p-6 transform rotate-3 hover:rotate-0 transition-transform duration-300">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-gray-900">
                       Днешни аварии

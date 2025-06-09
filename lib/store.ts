@@ -1,87 +1,224 @@
-import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface Outage {
-  id: string
-  source: string
-  area: string
-  type: string
-  category: string
-  description: string
-  start: string
-  end: string
-  timestamp: string
-  serviceType: "water" | "electricity" | "heating"
-  district: string
-  severity: "low" | "medium" | "high"
+  id: string;
+  source: string;
+  area: string;
+  type: string;
+  category: string;
+  description: string;
+  start: string;
+  end: string;
+  timestamp: string;
+  serviceType: "water" | "electricity" | "heating";
+  district: string;
+  severity: "low" | "medium" | "high";
 }
 
 export interface User {
-  id: string
-  name: string
-  email: string
-  address: string
-  district: string
-  notifications: boolean
-  emailNotifications: boolean
+  id: string;
+  name: string;
+  email: string;
+  address: string;
+  district: string;
+  notifications: boolean;
+  emailNotifications: boolean;
 }
 
 export interface Subscription {
-  active: boolean
-  expiresAt: string
-  paymentMethod: string
-  amount: number
-  currency: string
-  startDate: string
+  active: boolean;
+  expiresAt: string;
+  paymentMethod: string;
+  amount: number;
+  currency: string;
+  startDate: string;
 }
 
 interface FilterState {
-  searchQuery: string
-  selectedService: string
-  selectedCategory: string
-  selectedType: string
-  showOnlyUserDistrict: boolean
+  searchQuery: string;
+  selectedService: string;
+  selectedCategory: string;
+  selectedType: string;
+  showOnlyUserDistrict: boolean;
 }
 
 interface AppState {
   // User state
-  user: User | null
-  subscription: Subscription | null
-  setUser: (user: User | null) => void
-  setSubscription: (subscription: Subscription | null) => void
+  user: User | null;
+  subscription: Subscription | null;
+  setUser: (user: User | null) => void;
+  setSubscription: (subscription: Subscription | null) => void;
 
   // Outages state
-  outages: Outage[]
-  filteredOutages: Outage[]
-  selectedOutage: Outage | null
-  userNotifications: Outage[]
-  setOutages: (outages: Outage[]) => void
-  setSelectedOutage: (outage: Outage | null) => void
+  outages: Outage[];
+  filteredOutages: Outage[];
+  selectedOutage: Outage | null;
+  userNotifications: Outage[];
+  setOutages: (outages: Outage[]) => void;
+  setSelectedOutage: (outage: Outage | null) => void;
 
   // UI state
-  viewMode: "map" | "list"
-  mapType: "leaflet" | "mapbox" | "google"
-  loading: boolean
-  error: string | null
-  showPaymentModal: boolean
-  setViewMode: (mode: "map" | "list") => void
-  setMapType: (type: "leaflet" | "mapbox" | "google") => void
-  setLoading: (loading: boolean) => void
-  setError: (error: string | null) => void
-  setShowPaymentModal: (show: boolean) => void
+  viewMode: "map" | "list";
+  mapType: "leaflet" | "mapbox" | "google";
+  loading: boolean;
+  error: string | null;
+  showPaymentModal: boolean;
+  setViewMode: (mode: "map" | "list") => void;
+  setMapType: (type: "leaflet" | "mapbox" | "google") => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  setShowPaymentModal: (show: boolean) => void;
 
   // Filters
-  filters: FilterState
-  setSearchQuery: (query: string) => void
-  setSelectedService: (service: string) => void
-  setSelectedCategory: (category: string) => void
-  setSelectedType: (type: string) => void
-  setShowOnlyUserDistrict: (show: boolean) => void
-  resetFilters: () => void
+  filters: FilterState;
+  setSearchQuery: (query: string) => void;
+  setSelectedService: (service: string) => void;
+  setSelectedCategory: (category: string) => void;
+  setSelectedType: (type: string) => void;
+  setShowOnlyUserDistrict: (show: boolean) => void;
+  resetFilters: () => void;
 
   // Actions
-  applyFilters: () => void
-  fetchOutages: () => Promise<void>
+  applyFilters: () => void;
+  fetchOutages: () => Promise<void>;
+}
+
+// Helper function to transform API data to our Outage format
+function transformApiToOutage(apiData: any): Outage {
+  // Format dates
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return (
+        date.toLocaleDateString("bg-BG", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }) + " ч."
+      );
+    } catch {
+      return dateString; // Return original if parsing fails
+    }
+  };
+
+  // Map service types from JSON to our format
+  const serviceTypeMap: { [key: string]: "water" | "electricity" | "heating" } =
+    {
+      water: "water",
+      electricity: "electricity",
+      heating: "heating",
+    };
+
+  // Extract district from location or use fallback
+  const district =
+    apiData.location?.district || apiData.district || "Неизвестен";
+
+  // Extract area from location or use fallback
+  const area =
+    apiData.affectedArea ||
+    apiData.location?.address ||
+    apiData.area ||
+    "Неизвестна зона";
+
+  return {
+    id: apiData.id,
+    source: apiData.source,
+    area: area,
+    type:
+      apiData.category === "emergency"
+        ? "Аварийно спиране"
+        : "Планирано спиране",
+    category: apiData.category,
+    description: apiData.description,
+    start: formatDate(apiData.startTime),
+    end: formatDate(apiData.endTime),
+    timestamp: apiData.startTime,
+    serviceType:
+      serviceTypeMap[apiData.serviceType] ||
+      serviceTypeMap[apiData.type] ||
+      "water",
+    district: district,
+    severity: apiData.severity || apiData.priority || "medium",
+  };
+}
+
+// Helper function to load outages from API
+async function loadOutagesFromApi(): Promise<Outage[]> {
+  try {
+    const response = await fetch("/api/outages");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success || !Array.isArray(result.data)) {
+      throw new Error("Invalid API response format");
+    }
+
+    // Transform each API entry to our Outage format
+    const outages = result.data.map(transformApiToOutage);
+
+    return outages;
+  } catch (error) {
+    console.error("Error loading outages from API:", error);
+    // Return fallback data if API fails
+    return getFallbackOutages();
+  }
+}
+
+// Fallback data in case API fails
+function getFallbackOutages(): Outage[] {
+  return [
+    {
+      id: "1",
+      source: "Софийска вода",
+      area: "кв. Център - ул. Витоша от пл. Св. Неделя до бул. Патриарх Евтимий",
+      type: "Аварийно спиране",
+      category: "emergency",
+      description:
+        "Ремонт на главен водопровод поради пукнатина. Засегнати са жилищни и търговски обекти.",
+      start: "9 Юни 2025, 09:00 ч.",
+      end: "9 Юни 2025, 18:00 ч.",
+      timestamp: "2025-06-09T09:00:00",
+      serviceType: "water",
+      district: "Център",
+      severity: "high",
+    },
+    {
+      id: "2",
+      source: "ЧЕЗ България",
+      area: "ж.к. Младост 1А - блокове 101-110",
+      type: "Аварийно спиране",
+      category: "emergency",
+      description:
+        "Авария в трафопост поради претоварване. Работи се по възстановяване на електрозахранването.",
+      start: "9 Юни 2025, 14:30 ч.",
+      end: "9 Юни 2025, 20:00 ч.",
+      timestamp: "2025-06-09T14:30:00",
+      serviceType: "electricity",
+      district: "Младост",
+      severity: "high",
+    },
+    {
+      id: "3",
+      source: "Топлофикация София",
+      area: "ж.к. Люлин 5 - блокове 501-515",
+      type: "Аварийно спиране",
+      category: "emergency",
+      description:
+        "Авария на топлопровод. Временно спиране на топлата вода и отоплението.",
+      start: "9 Юни 2025, 08:00 ч.",
+      end: "10 Юни 2025, 16:00 ч.",
+      timestamp: "2025-06-09T08:00:00",
+      serviceType: "heating",
+      district: "Люлин",
+      severity: "high",
+    },
+  ];
 }
 
 export const useAppStore = create<AppState>()(
@@ -154,75 +291,103 @@ export const useAppStore = create<AppState>()(
 
       // Actions
       applyFilters: () => {
-        const { outages, user, filters } = get()
-        let filtered = [...outages]
+        const { outages, user, filters } = get();
+        let filtered = [...outages];
 
         if (user && filters.showOnlyUserDistrict) {
-          filtered = filtered.filter((outage) => outage.district.toLowerCase() === user.district.toLowerCase())
+          filtered = filtered.filter(
+            (outage) =>
+              outage.district.toLowerCase() === user.district.toLowerCase()
+          );
         }
 
         if (filters.searchQuery.trim()) {
-          const query = filters.searchQuery.toLowerCase().trim()
+          const query = filters.searchQuery.toLowerCase().trim();
           filtered = filtered.filter(
             (outage) =>
               outage.area.toLowerCase().includes(query) ||
               outage.description.toLowerCase().includes(query) ||
-              outage.district.toLowerCase().includes(query),
-          )
+              outage.district.toLowerCase().includes(query)
+          );
         }
 
         if (filters.selectedService !== "all") {
-          filtered = filtered.filter((outage) => outage.serviceType === filters.selectedService)
+          filtered = filtered.filter(
+            (outage) => outage.serviceType === filters.selectedService
+          );
         }
 
         if (filters.selectedCategory !== "all") {
-          filtered = filtered.filter((outage) => outage.category === filters.selectedCategory)
+          filtered = filtered.filter(
+            (outage) => outage.category === filters.selectedCategory
+          );
         }
 
         if (filters.selectedType !== "all") {
           if (filters.selectedType === "emergency") {
-            filtered = filtered.filter((outage) => outage.type && outage.type.toLowerCase().includes("аварийно"))
+            filtered = filtered.filter(
+              (outage) =>
+                outage.type && outage.type.toLowerCase().includes("аварийно")
+            );
           } else if (filters.selectedType === "scheduled") {
-            filtered = filtered.filter((outage) => !outage.type || !outage.type.toLowerCase().includes("аварийно"))
+            filtered = filtered.filter(
+              (outage) =>
+                !outage.type || !outage.type.toLowerCase().includes("аварийно")
+            );
           }
         }
 
-        set({ filteredOutages: filtered })
+        set({ filteredOutages: filtered });
 
         // Update user notifications
         if (user && get().subscription?.active) {
           const userDistrictOutages = outages.filter(
-            (outage) => outage.district.toLowerCase() === user.district.toLowerCase() && outage.severity === "high",
-          )
-          set({ userNotifications: userDistrictOutages })
+            (outage) =>
+              outage.district.toLowerCase() === user.district.toLowerCase() &&
+              outage.severity === "high"
+          );
+          set({ userNotifications: userDistrictOutages });
         } else {
-          set({ userNotifications: [] })
+          set({ userNotifications: [] });
         }
       },
 
       fetchOutages: async () => {
-        const { setLoading, setError, setOutages, applyFilters, setSelectedOutage } = get()
+        const {
+          setLoading,
+          setError,
+          setOutages,
+          applyFilters,
+          setSelectedOutage,
+        } = get();
 
         try {
-          setLoading(true)
-          setError(null)
+          setLoading(true);
+          setError(null);
 
-          // In a real app, this would be an API call
-          await new Promise((resolve) => setTimeout(resolve, 1000))
-          const mockData = generateMockOutages()
+          // Load outages from API
+          const outagesData = await loadOutagesFromApi();
 
-          setOutages(mockData)
+          setOutages(outagesData);
 
-          if (mockData.length > 0) {
-            setSelectedOutage(mockData[0])
+          if (outagesData.length > 0) {
+            setSelectedOutage(outagesData[0]);
           }
 
-          applyFilters()
+          applyFilters();
         } catch (error) {
-          console.error("Error fetching outages:", error)
-          setError("Възникна грешка при зареждане на данните")
+          console.error("Error fetching outages:", error);
+          setError("Възникна грешка при зареждане на данните");
+
+          // Use fallback data on error
+          const fallbackData = getFallbackOutages();
+          setOutages(fallbackData);
+          if (fallbackData.length > 0) {
+            setSelectedOutage(fallbackData[0]);
+          }
+          applyFilters();
         } finally {
-          setLoading(false)
+          setLoading(false);
         }
       },
     }),
@@ -234,42 +399,6 @@ export const useAppStore = create<AppState>()(
         mapType: state.mapType,
         viewMode: state.viewMode,
       }),
-    },
-  ),
-)
-
-// Helper function to generate mock data
-function generateMockOutages(): Outage[] {
-  return [
-    {
-      id: "1",
-      source: "Софийска вода",
-      area: "кв. Център - ул. Витоша от пл. Св. Неделя до бул. Патриарх Евтимий",
-      type: "Аварийно спиране",
-      category: "emergency",
-      description: "Ремонт на главен водопровод поради пукнатина. Засегнати са жилищни и търговски обекти.",
-      start: "8 Юни 2025, 09:00 ч.",
-      end: "8 Юни 2025, 18:00 ч.",
-      timestamp: "2025-06-08T09:00:00",
-      serviceType: "water",
-      district: "Център",
-      severity: "high",
-    },
-    {
-      id: "2",
-      source: "Софийска вода",
-      area: "кв. Дружба 1 - ул. Капитан Димитър Списаревски от бл. 1 до бл. 9",
-      type: "Планирано спиране",
-      category: "maintenance",
-      description:
-        "Подмяна на спирателни кранове и водомери. Молим гражданите да си осигурят необходимите количества вода.",
-      start: "10 Юни 2025, 09:30 ч.",
-      end: "10 Юни 2025, 17:30 ч.",
-      timestamp: "2025-06-10T09:30:00",
-      serviceType: "water",
-      district: "Дружба",
-      severity: "medium",
-    },
-    // Add more mock data as needed...
-  ]
-}
+    }
+  )
+);

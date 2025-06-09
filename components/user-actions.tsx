@@ -62,12 +62,6 @@ export function UserActions() {
         user={user}
         onSuccess={handleSubscriptionSuccess}
       />
-      <Button
-        size="sm"
-        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-      >
-        Известия
-      </Button>
     </div>
   );
 }

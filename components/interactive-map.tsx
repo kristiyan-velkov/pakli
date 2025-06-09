@@ -12,13 +12,12 @@ import { Button } from "@/components/ui/button";
 import {
   MapPin,
   Layers,
+  Target,
   Maximize2,
-  Minimize2,
-  Navigation,
-  Zap,
-  Droplets,
-  Thermometer,
+  Satellite,
+  Moon,
 } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 
 interface Outage {
   id: string;
@@ -66,6 +65,56 @@ const sofiaDistricts = {
   Искър: { lat: 42.65, lng: 23.4, zoom: 14 },
   Панчарево: { lat: 42.5833, lng: 23.4167, zoom: 14 },
   Банкя: { lat: 42.7167, lng: 23.15, zoom: 14 },
+  Кремиковци: { lat: 42.7667, lng: 23.4333, zoom: 14 },
+  Изгрев: { lat: 42.6833, lng: 23.35, zoom: 15 },
+  Драгалевци: { lat: 42.6167, lng: 23.3167, zoom: 14 },
+  Бояна: { lat: 42.65, lng: 23.2667, zoom: 14 },
+  Симеоново: { lat: 42.6, lng: 23.3333, zoom: 14 },
+  Хладилника: { lat: 42.6667, lng: 23.3333, zoom: 15 },
+  "Горна баня": { lat: 42.6833, lng: 23.2167, zoom: 14 },
+  Княжево: { lat: 42.6667, lng: 23.25, zoom: 14 },
+  Суходол: { lat: 42.7, lng: 23.25, zoom: 14 },
+  Орландовци: { lat: 42.7167, lng: 23.35, zoom: 14 },
+  Малашевци: { lat: 42.7333, lng: 23.3333, zoom: 14 },
+  Редута: { lat: 42.7, lng: 23.35, zoom: 15 },
+  "Гео Милев": { lat: 42.6833, lng: 23.3667, zoom: 15 },
+  Яворов: { lat: 42.6833, lng: 23.3667, zoom: 15 },
+  Стрелбище: { lat: 42.6667, lng: 23.3, zoom: 15 },
+  "Иван Вазов": { lat: 42.6833, lng: 23.3167, zoom: 15 },
+  Борово: { lat: 42.6667, lng: 23.3, zoom: 15 },
+  Хиподрума: { lat: 42.6833, lng: 23.2833, zoom: 15 },
+  "Сухата река": { lat: 42.7167, lng: 23.3667, zoom: 14 },
+  Дианабад: { lat: 42.6667, lng: 23.3667, zoom: 15 },
+  Павлово: { lat: 42.6667, lng: 23.2667, zoom: 14 },
+  Манастирски: { lat: 42.65, lng: 23.3, zoom: 14 },
+  Карпузица: { lat: 42.6833, lng: 23.2667, zoom: 14 },
+  Факултета: { lat: 42.7, lng: 23.2667, zoom: 14 },
+  Модерно: { lat: 42.7333, lng: 23.2833, zoom: 14 },
+  Захарна: { lat: 42.7167, lng: 23.2833, zoom: 14 },
+  Фондови: { lat: 42.7, lng: 23.2833, zoom: 14 },
+  Бенковски: { lat: 42.7333, lng: 23.3333, zoom: 14 },
+  Триъгълника: { lat: 42.6833, lng: 23.2833, zoom: 14 },
+  Западен: { lat: 42.7, lng: 23.2667, zoom: 14 },
+  Бакърена: { lat: 42.7, lng: 23.2667, zoom: 14 },
+  Сеславци: { lat: 42.7833, lng: 23.4, zoom: 14 },
+  Требич: { lat: 42.75, lng: 23.25, zoom: 14 },
+  Обеля: { lat: 42.7333, lng: 23.2667, zoom: 14 },
+  Бистрица: { lat: 42.5833, lng: 23.3667, zoom: 14 },
+  Горубляне: { lat: 42.6333, lng: 23.4, zoom: 14 },
+  Казичене: { lat: 42.6667, lng: 23.4667, zoom: 14 },
+  Кокаляне: { lat: 42.55, lng: 23.4333, zoom: 14 },
+  Лозен: { lat: 42.6167, lng: 23.4333, zoom: 14 },
+  Негован: { lat: 42.7333, lng: 23.4, zoom: 14 },
+  Световрачене: { lat: 42.7833, lng: 23.3333, zoom: 14 },
+  Чепинци: { lat: 42.7667, lng: 23.3833, zoom: 14 },
+  Нови: { lat: 42.8167, lng: 23.3667, zoom: 14 },
+  Владая: { lat: 42.6333, lng: 23.2, zoom: 14 },
+  Волуяк: { lat: 42.7333, lng: 23.2, zoom: 14 },
+  Герман: { lat: 42.6167, lng: 23.3667, zoom: 14 },
+  Железница: { lat: 42.5333, lng: 23.3667, zoom: 14 },
+  Иваняне: { lat: 42.6667, lng: 23.1833, zoom: 14 },
+  Кубратово: { lat: 42.7667, lng: 23.3, zoom: 14 },
+  Мърчаево: { lat: 42.6167, lng: 23.1833, zoom: 14 },
 };
 
 const InteractiveMap = forwardRef<any, InteractiveMapProps>(
@@ -86,13 +135,43 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
     const [mapLoaded, setMapLoaded] = useState(false);
     const [mapError, setMapError] = useState<string | null>(null);
     const [isClient, setIsClient] = useState(false);
+    const [initAttempts, setInitAttempts] = useState(0);
+    const [mapTypeLocal, setMapTypeLocal] = useState<
+      "normal" | "satellite" | "dark"
+    >("normal");
+    const [serviceFilter, setServiceFilter] = useState<string>("all");
+    const [priorityFilter, setPriorityFilter] = useState<boolean>(false);
+    const maxInitAttempts = 5;
+    const { setSelectedService, applyFilters } = useAppStore();
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [mapStyle, setMapStyle] = useState("default");
 
     // Ensure we're on the client side
     useEffect(() => {
       setIsClient(true);
     }, []);
+
+    // Filter outages based on current filters
+    const filteredOutages = outages.filter((outage) => {
+      if (serviceFilter !== "all" && outage.serviceType !== serviceFilter) {
+        return false;
+      }
+      if (priorityFilter && outage.severity !== "high") {
+        return false;
+      }
+      return true;
+    });
+
+    // Handle service filter click
+    const handleServiceFilter = (service: string) => {
+      if (serviceFilter === service) {
+        setServiceFilter("all");
+        setSelectedService("all");
+      } else {
+        setServiceFilter(service);
+        setSelectedService(service);
+      }
+      applyFilters();
+    };
 
     // Function to get coordinates for an outage based on area text
     const getOutageCoordinates = (outage: Outage) => {
@@ -145,7 +224,7 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
         case "electricity":
           return "⚡";
         case "heating":
-          return "🔥";
+          return "🏠";
         default:
           return "⚠️";
       }
@@ -153,29 +232,53 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
 
     // Initialize map
     useEffect(() => {
-      if (!isClient || !mapRef.current) return;
+      if (!isClient) return;
 
-      // Prevent multiple initializations
+      // Don't try to initialize if we've reached max attempts
+      if (initAttempts >= maxInitAttempts) {
+        setMapError(
+          `Грешка при зареждане на картата: Достигнат максимален брой опити (${maxInitAttempts})`
+        );
+        return;
+      }
+
+      // If map is already initialized, don't try again
       if (mapInstanceRef.current) {
         return;
       }
 
       const initMap = async () => {
         try {
-          // Wait longer for DOM to be ready
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          console.log(
+            `Map initialization attempt ${initAttempts + 1}/${maxInitAttempts}`
+          );
+
+          // Wait for DOM to be ready
+          await new Promise((resolve) =>
+            setTimeout(resolve, 500 + initAttempts * 300)
+          );
+
+          // Check if component is still mounted
+          if (!mapRef.current) {
+            console.warn("Map container ref is null, will retry");
+            setInitAttempts((prev) => prev + 1);
+            return;
+          }
 
           // Double-check container exists and is mounted in the DOM
-          if (!mapRef.current || !document.body.contains(mapRef.current)) {
-            console.warn("Map container not found or not mounted in DOM");
+          if (!document.body.contains(mapRef.current)) {
+            console.warn("Map container not found in DOM, will retry");
+            setInitAttempts((prev) => prev + 1);
             return;
           }
 
           // Ensure container has dimensions
           const container = mapRef.current;
           if (container.clientWidth === 0 || container.clientHeight === 0) {
-            console.warn("Map container has zero dimensions");
-            container.style.height = "600px";
+            console.warn(
+              "Map container has zero dimensions, setting default dimensions"
+            );
+            container.style.height = "300px";
             container.style.width = "100%";
           }
 
@@ -193,6 +296,17 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
           let L;
           try {
             L = (await import("leaflet")).default;
+
+            // Add Leaflet CSS if not already added
+            if (!document.querySelector('link[href*="leaflet.css"]')) {
+              const link = document.createElement("link");
+              link.rel = "stylesheet";
+              link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+              link.integrity =
+                "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
+              link.crossOrigin = "";
+              document.head.appendChild(link);
+            }
           } catch (importError) {
             console.error("Failed to import Leaflet:", importError);
             setMapError(
@@ -201,50 +315,75 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
             return;
           }
 
+          // Final check before initialization
+          if (!mapRef.current || !document.body.contains(mapRef.current)) {
+            console.warn(
+              "Map container lost during initialization, will retry"
+            );
+            setInitAttempts((prev) => prev + 1);
+            return;
+          }
+
           // Initialize map with error handling
           try {
+            console.log("Creating map instance");
             const map = L.map(mapRef.current, {
               center: [42.6977, 23.3219],
               zoom: 12,
-              zoomControl: false,
-              preferCanvas: true,
-              fadeAnimation: false,
+              zoomControl: true,
+              preferCanvas: true, // Use canvas for better performance
+              fadeAnimation: false, // Disable fade animation to prevent issues
               zoomAnimation: true,
               markerZoomAnimation: false,
+              scrollWheelZoom: true,
+              doubleClickZoom: true,
+              touchZoom: true,
+              boxZoom: true,
+              keyboard: true,
             });
 
-            // Add multiple tile layers for different styles
-            const tileLayers = {
-              default: L.tileLayer(
-                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                {
-                  attribution:
-                    '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                  maxZoom: 18,
-                }
-              ),
-              satellite: L.tileLayer(
-                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-                {
-                  attribution: '© <a href="https://www.esri.com/">Esri</a>',
-                  maxZoom: 18,
-                }
-              ),
-              dark: L.tileLayer(
-                "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-                {
-                  attribution:
-                    '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
-                  maxZoom: 18,
-                }
-              ),
+            // Add tile layer based on map type
+            const getTileLayer = () => {
+              switch (mapTypeLocal) {
+                case "satellite":
+                  return L.tileLayer(
+                    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                    {
+                      attribution:
+                        "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+                    }
+                  );
+                case "dark":
+                  return L.tileLayer(
+                    "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+                    {
+                      attribution:
+                        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    }
+                  );
+                default:
+                  return L.tileLayer(
+                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    {
+                      attribution:
+                        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    }
+                  );
+              }
             };
 
-            // Add default tile layer
-            tileLayers.default.addTo(map);
+            getTileLayer().addTo(map);
+
+            // Add custom zoom controls
+            L.control
+              .zoom({
+                position: "bottomright",
+              })
+              .addTo(map);
 
             // Wait for map to be fully loaded
             map.whenReady(() => {
+              console.log("Map is ready");
               mapInstanceRef.current = map;
               setMapLoaded(true);
               setMapError(null);
@@ -262,9 +401,6 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
               console.error("Map error:", e);
               setMapError("Грешка при зареждане на картата");
             });
-
-            // Store tile layers for switching
-            map.tileLayers = tileLayers;
           } catch (error) {
             console.error("Error initializing map:", error);
             setMapError(
@@ -272,10 +408,12 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
                 error.message || "Неизвестна грешка"
               }`
             );
+            setInitAttempts((prev) => prev + 1);
           }
         } catch (error) {
           console.error("Error in map initialization:", error);
           setMapError("Грешка при зареждане на картата");
+          setInitAttempts((prev) => prev + 1);
         }
       };
 
@@ -351,7 +489,18 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
           }
         }
       };
-    }, [isClient]);
+    }, [isClient, initAttempts, maxInitAttempts, mapTypeLocal]);
+
+    // Retry initialization if it fails
+    useEffect(() => {
+      if (mapError && initAttempts < maxInitAttempts && !mapLoaded) {
+        const retryTimeout = setTimeout(() => {
+          setInitAttempts((prev) => prev + 1);
+        }, 2000);
+
+        return () => clearTimeout(retryTimeout);
+      }
+    }, [mapError, initAttempts, maxInitAttempts, mapLoaded]);
 
     // Handle user district focus and overlay
     useEffect(() => {
@@ -553,23 +702,32 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
               const customIcon = L.divIcon({
                 className: "custom-marker",
                 html: `
-                  <div class="marker-container">
-                    <div class="marker-pulse ${
-                      outage.severity === "high" ? "pulse-high" : ""
-                    }"></div>
-                    <div class="marker-main" style="background: linear-gradient(135deg, ${color}, ${color}dd);">
-                      <span class="marker-icon">${serviceIcon}</span>
-                      ${
-                        outage.severity === "high"
-                          ? '<div class="marker-priority"></div>'
-                          : ""
-                      }
-                    </div>
-                    <div class="marker-shadow"></div>
-                  </div>
-                `,
-                iconSize: [40, 40],
-                iconAnchor: [20, 35],
+              <div style="
+                background: linear-gradient(135deg, ${color}, ${color}dd);
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                border: 3px solid white;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 14px;
+                transition: all 0.2s ease;
+                position: relative;
+              ">
+                ${serviceIcon}
+                ${
+                  outage.severity === "high"
+                    ? '<div style="position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 1px solid white;"></div>'
+                    : ""
+                }
+              </div>
+            `,
+                iconSize: [34, 34],
+                iconAnchor: [17, 17],
               });
 
               const marker = L.marker([coords.lat, coords.lng], {
@@ -580,75 +738,63 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
                 marker.addTo(mapInstanceRef.current);
 
                 const popupContent = `
-                  <div class="custom-popup">
-                    <div class="popup-header">
-                      <div class="popup-service-icon">${serviceIcon}</div>
-                      <div class="popup-title">
-                        <h3>${
-                          outage.type &&
-                          outage.type.toLowerCase().includes("аварийно")
-                            ? "🚨 Авария"
-                            : outage.type &&
-                              outage.type.toLowerCase().includes("планирано")
-                            ? "⏰ Планирано"
-                            : "🔧 В ход"
-                        }</h3>
-                        ${
-                          outage.severity === "high"
-                            ? '<span class="popup-priority">ВИСОК ПРИОРИТЕТ</span>'
-                            : ""
-                        }
-                      </div>
-                    </div>
-                    
-                    <div class="popup-content">
-                      <div class="popup-location">
-                        <MapPin size="16" />
-                        <span>${outage.area}</span>
-                      </div>
-                      
-                      ${
-                        outage.description
-                          ? `<div class="popup-description">${outage.description}</div>`
-                          : ""
-                      }
-                      
-                      ${
-                        outage.start && outage.end
-                          ? `
-                        <div class="popup-time">
-                          <div class="time-icon">⏰</div>
-                          <div class="time-details">
-                            <div class="time-period">${outage.start} - ${outage.end}</div>
-                          </div>
-                        </div>
-                      `
-                          : ""
-                      }
-                      
-                      <div class="popup-footer">
-                        <div class="popup-source">
-                          <span>Източник:</span> ${outage.source}
-                        </div>
-                        <div class="popup-district">
-                          <span>Квартал:</span> ${outage.district}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                `;
+              <div style="min-width: 240px; font-family: system-ui; padding: 4px;">
+                <h3 style="margin: 0 0 8px 0; color: ${color}; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                  ${serviceIcon}
+                  ${
+                    outage.type &&
+                    outage.type.toLowerCase().includes("аварийно")
+                      ? "🚨 Авария"
+                      : outage.type &&
+                        outage.type.toLowerCase().includes("планирано")
+                      ? "⏰ Планирано"
+                      : "🔧 В ход"
+                  }
+                  ${
+                    outage.severity === "high"
+                      ? '<span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px;">ВИСОК</span>'
+                      : ""
+                  }
+                </h3>
+                <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: bold; color: #333;">
+                  📍 ${outage.area}
+                </p>
+                ${
+                  outage.description
+                    ? `
+                  <p style="margin: 0 0 8px 0; font-size: 12px; color: #666; line-height: 1.4;">
+                    ${outage.description}
+                  </p>
+                `
+                    : ""
+                }
+                ${
+                  outage.start && outage.end
+                    ? `
+                  <p style="margin: 0 0 8px 0; font-size: 12px; color: #666;">
+                    ⏰ ${outage.start} - ${outage.end}
+                  </p>
+                `
+                    : ""
+                }
+                <p style="margin: 0; font-size: 11px; color: #999;">
+                  Източник: ${outage.source} | Квартал: ${outage.district}
+                </p>
+              </div>
+            `;
 
                 marker.bindPopup(popupContent, {
-                  maxWidth: 380,
-                  className: "modern-popup",
-                  closeButton: true,
-                  autoPan: true,
+                  maxWidth: 340,
+                  className: "custom-popup",
                 });
 
                 marker.on("click", () => {
                   if (onOutageSelect) {
                     onOutageSelect(outage);
                   }
+
+                  // Add area highlighting
+                  highlightOutageArea(outage, coords);
                 });
 
                 markersRef.current.push(marker);
@@ -958,137 +1104,96 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
     useImperativeHandle(
       ref,
       () => ({
-        focusOnOutage: (outage: Outage) => {
-          if (!mapInstanceRef.current) return;
-
-          try {
-            const coords = getOutageCoordinates(outage);
-
-            if (onOutageSelect) {
-              onOutageSelect(outage);
-            }
-
-            mapInstanceRef.current.setView([coords.lat, coords.lng], 17, {
-              animate: true,
-              duration: 1.5,
-            });
-          } catch (error) {
-            console.error("Error focusing on outage:", error);
-          }
-        },
-        resetView: () => {
-          if (mapInstanceRef.current) {
-            try {
-              mapInstanceRef.current.setView([42.6977, 23.3219], 12, {
-                animate: true,
-                duration: 1,
-              });
-            } catch (error) {
-              console.error("Error resetting view:", error);
-            }
-          }
-        },
-        zoomToOutages: () => {
-          if (!mapInstanceRef.current || outages.length === 0) return;
-
-          try {
-            const coords = outages.map(getOutageCoordinates);
-            const lats = coords.map((c) => c.lat);
-            const lngs = coords.map((c) => c.lng);
-
-            const bounds = [
-              [Math.min(...lats), Math.min(...lngs)],
-              [Math.max(...lats), Math.max(...lngs)],
-            ];
-
-            mapInstanceRef.current.fitBounds(bounds, { padding: [20, 20] });
-          } catch (error) {
-            console.error("Error zooming to outages:", error);
-          }
-        },
+        focusOnOutage,
+        resetView,
+        zoomToOutages,
       }),
-      [outages, onOutageSelect]
+      []
     );
 
-    // Toggle fullscreen
-    const toggleFullscreen = () => {
-      setIsFullscreen(!isFullscreen);
-      setTimeout(() => {
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.invalidateSize();
+    const resetView = () => {
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.setView([42.6977, 23.3219], 12, {
+            animate: true,
+            duration: 1,
+          });
+        } catch (error) {
+          console.error("Error resetting view:", error);
         }
-      }, 300);
-    };
-
-    // Change map style
-    const changeMapStyle = async (style: string) => {
-      if (!mapInstanceRef.current) return;
-
-      try {
-        const L = (await import("leaflet")).default;
-
-        // Remove current tile layer
-        mapInstanceRef.current.eachLayer((layer: any) => {
-          if (layer instanceof L.TileLayer) {
-            mapInstanceRef.current.removeLayer(layer);
-          }
-        });
-
-        // Add new tile layer based on style
-        let newLayer;
-        switch (style) {
-          case "satellite":
-            newLayer = L.tileLayer(
-              "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-              {
-                attribution: '© <a href="https://www.esri.com/">Esri</a>',
-                maxZoom: 18,
-              }
-            );
-            break;
-          case "dark":
-            newLayer = L.tileLayer(
-              "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-              {
-                attribution:
-                  '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
-                maxZoom: 18,
-              }
-            );
-            break;
-          default:
-            newLayer = L.tileLayer(
-              "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              {
-                attribution:
-                  '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                maxZoom: 18,
-              }
-            );
-        }
-
-        newLayer.addTo(mapInstanceRef.current);
-        setMapStyle(style);
-      } catch (error) {
-        console.error("Error changing map style:", error);
       }
     };
+
+    const zoomToOutages = () => {
+      if (!mapInstanceRef.current || outages.length === 0) return;
+
+      try {
+        const coords = outages.map(getOutageCoordinates);
+        const lats = coords.map((c) => c.lat);
+        const lngs = coords.map((c) => c.lng);
+
+        const bounds = [
+          [Math.min(...lats), Math.min(...lngs)],
+          [Math.max(...lats), Math.max(...lngs)],
+        ];
+
+        mapInstanceRef.current.fitBounds(bounds, { padding: [20, 20] });
+      } catch (error) {
+        console.error("Error zooming to outages:", error);
+      }
+    };
+
+    // Add this function to ensure map refreshes when it becomes visible
+    useEffect(() => {
+      if (mapInstanceRef.current && mapLoaded && viewMode === "map") {
+        // Use a longer delay and check if map still exists
+        const timeoutId = setTimeout(() => {
+          if (
+            mapInstanceRef.current &&
+            typeof mapInstanceRef.current.invalidateSize === "function"
+          ) {
+            try {
+              mapInstanceRef.current.invalidateSize(true);
+            } catch (error) {
+              console.warn("Error invalidating map size:", error);
+            }
+          }
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+      }
+    }, [mapLoaded, viewMode]);
+
+    // Handle escape key for fullscreen
+    useEffect(() => {
+      const handleEscape = (event: KeyboardEvent) => {
+        if (event.key === "Escape" && isFullscreen) {
+          setIsFullscreen(false);
+        }
+      };
+
+      document.addEventListener("keydown", handleEscape);
+
+      return () => {
+        document.removeEventListener("keydown", handleEscape);
+      };
+    }, [isFullscreen]);
 
     // Don't render on server side
     if (!isClient) {
       return (
-        <div className="rounded-2xl overflow-hidden shadow-2xl">
-          <CardHeader className="px-8 py-6 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
-            <CardTitle className="flex items-center gap-3 font-bold text-xl">
-              <MapPin className="h-6 w-6" />
+        <div className="rounded-xl overflow-hidden">
+          <CardHeader className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardTitle className="flex items-center gap-2 font-semibold text-gray-800">
+              <MapPin className="h-5 w-5 text-blue-600" />
               Интерактивна карта на прекъсванията
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="h-[600px] w-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-6"></div>
-                <p className="text-gray-700 font-semibold text-lg">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600 font-medium">
                   Зареждане на картата...
                 </p>
               </div>
@@ -1100,14 +1205,23 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
 
     if (mapError) {
       return (
-        <Card className="h-96 shadow-2xl">
+        <Card className="h-96">
           <CardContent className="flex items-center justify-center h-full">
             <div className="text-center">
-              <MapPin className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-              <p className="text-xl text-gray-600 mb-4">{mapError}</p>
-              <p className="text-sm text-gray-500">
+              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-lg text-gray-600">{mapError}</p>
+              <p className="text-sm text-gray-500 mt-2">
                 Моля опитайте да презаредите страницата
               </p>
+              {initAttempts < maxInitAttempts && (
+                <Button
+                  onClick={() => setInitAttempts((prev) => prev + 1)}
+                  className="mt-4"
+                  variant="outline"
+                >
+                  Опитай отново ({initAttempts}/{maxInitAttempts})
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1116,407 +1230,202 @@ const InteractiveMap = forwardRef<any, InteractiveMapProps>(
 
     return (
       <div
-        className={`rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 ${
-          isFullscreen ? "fixed inset-4 z-50" : ""
+        className={`rounded-xl overflow-hidden ${
+          isFullscreen ? "fixed inset-0 z-50" : ""
         }`}
       >
-        <CardHeader className="px-8 py-6 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
+        {/* Blue Header with Filters */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3 font-bold text-xl">
-              <MapPin className="h-6 w-6" />
-              Интерактивна карта на прекъсванията
-            </CardTitle>
+            {/* Left side - Title */}
             <div className="flex items-center gap-3">
-              {/* Map Style Selector */}
-              <div className="flex items-center gap-2 bg-white/20 rounded-lg p-1">
-                <button
-                  onClick={() => changeMapStyle("default")}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-all ${
-                    mapStyle === "default"
-                      ? "bg-white text-blue-700"
-                      : "text-white/80 hover:text-white"
-                  }`}
-                >
-                  Карта
-                </button>
-                <button
-                  onClick={() => changeMapStyle("satellite")}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-all ${
-                    mapStyle === "satellite"
-                      ? "bg-white text-blue-700"
-                      : "text-white/80 hover:text-white"
-                  }`}
-                >
-                  Сателит
-                </button>
-                <button
-                  onClick={() => changeMapStyle("dark")}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-all ${
-                    mapStyle === "dark"
-                      ? "bg-white text-blue-700"
-                      : "text-white/80 hover:text-white"
-                  }`}
-                >
-                  Тъмна
-                </button>
-              </div>
+              <MapPin className="h-6 w-6 text-white" />
+              <h2 className="text-white font-semibold text-lg">
+                Интерактивна карта на прекъсванията
+              </h2>
+            </div>
 
-              {/* Control Buttons */}
+            {/* Right side - Controls */}
+            <div className="flex items-center gap-2">
               <Button
-                variant="secondary"
+                variant={mapTypeLocal === "normal" ? "secondary" : "ghost"}
                 size="sm"
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                onClick={() => setMapTypeLocal("normal")}
+                className={`text-white border-white/30 ${
+                  mapTypeLocal === "normal"
+                    ? "bg-white/20"
+                    : "hover:bg-white/10"
+                }`}
+              >
+                Карта
+              </Button>
+              <Button
+                variant={mapTypeLocal === "satellite" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setMapTypeLocal("satellite")}
+                className={`text-white border-white/30 ${
+                  mapTypeLocal === "satellite"
+                    ? "bg-white/20"
+                    : "hover:bg-white/10"
+                }`}
+              >
+                <Satellite className="h-4 w-4 mr-1" />
+                Сателит
+              </Button>
+              <Button
+                variant={mapTypeLocal === "dark" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setMapTypeLocal("dark")}
+                className={`text-white border-white/30 ${
+                  mapTypeLocal === "dark" ? "bg-white/20" : "hover:bg-white/10"
+                }`}
+              >
+                <Moon className="h-4 w-4 mr-1" />
+                Тъмна
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   if (mapInstanceRef.current) {
                     mapInstanceRef.current.setView([42.6977, 23.3219], 12, {
                       animate: true,
-                      duration: 1,
                     });
                   }
                 }}
+                className="text-white border-white/30 hover:bg-white/10"
               >
-                <Navigation className="h-4 w-4 mr-2" />
+                <Target className="h-4 w-4 mr-1" />
                 Център
               </Button>
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="sm"
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
                 onClick={() => {
-                  if (!mapInstanceRef.current || outages.length === 0) return;
-                  const coords = outages.map(getOutageCoordinates);
-                  const lats = coords.map((c) => c.lat);
-                  const lngs = coords.map((c) => c.lng);
-                  const bounds = [
-                    [Math.min(...lats), Math.min(...lngs)],
-                    [Math.max(...lats), Math.max(...lngs)],
-                  ];
-                  mapInstanceRef.current.fitBounds(bounds, {
-                    padding: [20, 20],
-                  });
+                  if (mapInstanceRef.current && filteredOutages.length > 0) {
+                    const coords = filteredOutages.map(getOutageCoordinates);
+                    const lats = coords.map((c) => c.lat);
+                    const lngs = coords.map((c) => c.lng);
+                    const bounds = [
+                      [Math.min(...lats), Math.min(...lngs)],
+                      [Math.max(...lats), Math.max(...lngs)],
+                    ];
+                    mapInstanceRef.current.fitBounds(bounds, {
+                      padding: [20, 20],
+                    });
+                  }
                 }}
+                className="text-white border-white/30 hover:bg-white/10"
               >
-                <Layers className="h-4 w-4 mr-2" />
+                <Layers className="h-4 w-4 mr-1" />
                 Всички
               </Button>
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="sm"
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                onClick={toggleFullscreen}
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="text-white border-white/30 hover:bg-white/10"
               >
-                {isFullscreen ? (
-                  <Minimize2 className="h-4 w-4" />
-                ) : (
-                  <Maximize2 className="h-4 w-4" />
-                )}
+                <Maximize2 className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          {/* Enhanced Legend */}
-          <div className="flex items-center justify-between w-full mt-6">
-            <div className="flex items-center gap-8 text-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white font-bold">
-                  <Droplets className="h-4 w-4" />
-                </div>
-                <span className="text-white/90 font-medium">Вода</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-yellow-500 rounded-full shadow-lg flex items-center justify-center text-white font-bold">
-                  <Zap className="h-4 w-4" />
-                </div>
-                <span className="text-white/90 font-medium">Ток</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-red-500 rounded-full shadow-lg flex items-center justify-center text-white font-bold">
-                  <Thermometer className="h-4 w-4" />
-                </div>
-                <span className="text-white/90 font-medium">Топлофикация</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-lg"></div>
-                <span className="text-white/90 font-medium text-sm">
-                  Висок приоритет
-                </span>
-              </div>
-            </div>
+          {/* Filter Buttons */}
+          <div className="flex items-center gap-3 mt-4">
+            <Button
+              variant={serviceFilter === "water" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => handleServiceFilter("water")}
+              className={`text-white border-white/30 ${
+                serviceFilter === "water" ? "bg-white/20" : "hover:bg-white/10"
+              } flex items-center gap-2`}
+            >
+              <span className="text-blue-300">💧</span>
+              Вода
+            </Button>
+            <Button
+              variant={serviceFilter === "electricity" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => handleServiceFilter("electricity")}
+              className={`text-white border-white/30 ${
+                serviceFilter === "electricity"
+                  ? "bg-white/20"
+                  : "hover:bg-white/10"
+              } flex items-center gap-2`}
+            >
+              <span className="text-yellow-300">⚡</span>
+              Ток
+            </Button>
+            <Button
+              variant={serviceFilter === "heating" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => handleServiceFilter("heating")}
+              className={`text-white border-white/30 ${
+                serviceFilter === "heating"
+                  ? "bg-white/20"
+                  : "hover:bg-white/10"
+              } flex items-center gap-2`}
+            >
+              <span className="text-red-300">🏠</span>
+              Топлофикация
+            </Button>
+            <Button
+              variant={priorityFilter ? "secondary" : "ghost"}
+              size="sm"
+              disabled
+              className={`text-white border-white/30 ${
+                priorityFilter ? "bg-white/20" : "hover:bg-white/10"
+              } flex items-center gap-2 opacity-50 cursor-not-allowed`}
+            >
+              <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+              Висок приоритет
+            </Button>
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className="p-0 relative">
-          <div className="relative">
-            <div
-              ref={mapRef}
-              className="h-[600px] w-full"
-              style={{ minHeight: "500px" }}
-            />
+        {/* Map Container */}
+        <div className="relative">
+          <div
+            ref={mapRef}
+            className={`w-full ${isFullscreen ? "h-screen" : "h-[700px]"}`}
+            style={{ minHeight: "600px" }}
+            id="map-container"
+            data-testid="map-container"
+          />
 
-            {!mapLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-6"></div>
-                  <p className="text-gray-700 font-semibold text-lg">
-                    Зареждане на картата...
+          {!mapLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600 font-medium">
+                  Зареждане на картата...
+                </p>
+                {initAttempts > 0 && (
+                  <p className="text-gray-500 text-sm mt-2">
+                    Опит {initAttempts}/{maxInitAttempts}
                   </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {mapLoaded && (
-            <div className="px-8 py-4 bg-gradient-to-r from-gray-50 to-gray-100 text-sm text-gray-700 border-t">
-              <div className="flex items-center justify-between">
-                <p className="flex items-center gap-2">
-                  <span className="text-2xl">💡</span>
-                  <span className="font-medium">
-                    Натиснете на маркер за повече информация
-                  </span>
-                </p>
-                <p className="font-bold text-blue-700 flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  {outages.length} прекъсвания в София
-                </p>
+                )}
               </div>
             </div>
           )}
-        </CardContent>
+        </div>
 
-        {/* Custom CSS for markers and popups */}
-        <style jsx global>{`
-          .marker-container {
-            position: relative;
-            width: 40px;
-            height: 40px;
-          }
-
-          .marker-pulse {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            background: rgba(59, 130, 246, 0.3);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-          }
-
-          .pulse-high {
-            background: rgba(239, 68, 68, 0.4) !important;
-            animation: pulse-urgent 1s infinite;
-          }
-
-          @keyframes pulse {
-            0% {
-              transform: translate(-50%, -50%) scale(0.8);
-              opacity: 1;
-            }
-            100% {
-              transform: translate(-50%, -50%) scale(1.5);
-              opacity: 0;
-            }
-          }
-
-          @keyframes pulse-urgent {
-            0%,
-            100% {
-              transform: translate(-50%, -50%) scale(0.8);
-              opacity: 1;
-            }
-            50% {
-              transform: translate(-50%, -50%) scale(1.3);
-              opacity: 0.5;
-            }
-          }
-
-          .marker-main {
-            position: relative;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            transition: all 0.3s ease;
-          }
-
-          .marker-main:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-          }
-
-          .marker-icon {
-            font-size: 16px;
-            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-          }
-
-          .marker-priority {
-            position: absolute;
-            top: -3px;
-            right: -3px;
-            width: 12px;
-            height: 12px;
-            background: #ef4444;
-            border: 2px solid white;
-            border-radius: 50%;
-            animation: priority-blink 1s infinite;
-          }
-
-          @keyframes priority-blink {
-            0%,
-            100% {
-              opacity: 1;
-            }
-            50% {
-              opacity: 0.5;
-            }
-          }
-
-          .marker-shadow {
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 8px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 50%;
-            filter: blur(3px);
-          }
-
-          .custom-popup {
-            font-family: system-ui, -apple-system, sans-serif;
-            max-width: 350px;
-            padding: 0;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-          }
-
-          .popup-header {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            color: white;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-          }
-
-          .popup-service-icon {
-            font-size: 24px;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-          }
-
-          .popup-title h3 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: bold;
-          }
-
-          .popup-priority {
-            background: #ef4444;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: bold;
-            margin-top: 4px;
-            display: inline-block;
-            animation: priority-glow 2s infinite;
-          }
-
-          @keyframes priority-glow {
-            0%,
-            100% {
-              box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
-            }
-            50% {
-              box-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
-            }
-          }
-
-          .popup-content {
-            padding: 16px;
-            background: white;
-          }
-
-          .popup-location {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: bold;
-            color: #374151;
-            margin-bottom: 12px;
-            font-size: 14px;
-          }
-
-          .popup-description {
-            color: #6b7280;
-            line-height: 1.5;
-            margin-bottom: 12px;
-            font-size: 13px;
-          }
-
-          .popup-time {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #f3f4f6;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-          }
-
-          .time-icon {
-            font-size: 16px;
-          }
-
-          .time-period {
-            font-weight: 600;
-            color: #374151;
-            font-size: 13px;
-          }
-
-          .popup-footer {
-            border-top: 1px solid #e5e7eb;
-            padding-top: 12px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            font-size: 11px;
-            color: #6b7280;
-          }
-
-          .popup-footer span {
-            font-weight: 600;
-            color: #374151;
-          }
-
-          .modern-popup .leaflet-popup-content-wrapper {
-            background: transparent;
-            border-radius: 12px;
-            box-shadow: none;
-            padding: 0;
-          }
-
-          .modern-popup .leaflet-popup-content {
-            margin: 0;
-            padding: 0;
-          }
-
-          .modern-popup .leaflet-popup-tip {
-            background: white;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-          }
-        `}</style>
+        {mapLoaded && (
+          <div className="px-6 py-3 bg-gray-50/50 text-sm text-gray-600 border-t">
+            <div className="flex items-center justify-between">
+              <p>💡 Натиснете на маркер за повече информация</p>
+              <p className="font-medium">
+                📍 {filteredOutages.length} прекъсвания показани
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 );
+
+InteractiveMap.displayName = "InteractiveMap";
 
 export default InteractiveMap;

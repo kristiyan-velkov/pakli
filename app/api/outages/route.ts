@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 export interface WaterOutage {
+  id: string;
   source: string;
   area: string;
   type: string;
@@ -9,98 +10,86 @@ export interface WaterOutage {
   start: string;
   end: string;
   timestamp: string;
+  serviceType: "water" | "electricity" | "heating";
+  district: string;
+  severity: "low" | "medium" | "high";
 }
 
-// Fallback data in case of JSON file issues
-const fallbackData: WaterOutage[] = [
-  {
-    source: "Софийска вода",
-    area: "кв. Център - тестова зона",
-    type: "Аварийно спиране",
-    category: "sanitaryBackup",
-    description: "Тестово аварийно прекъсване",
-    start: "Днес, 10:00 ч.",
-    end: "Днес, 16:00 ч.",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    source: "Софийска вода",
-    area: "кв. Лозенец - тестова зона",
-    type: "",
-    category: "capitalProjects",
-    description: "Тестово планирано прекъсване",
-    start: "Утре, 09:00 ч.",
-    end: "Утре, 18:00 ч.",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    source: "Софийска вода",
-    area: "Зона на спиране: кв. Васил Левски - ул. Летоструй от ул. Бесарабия до ул. Рилска обител и ул. 547",
-    type: "Аварийно спиране",
-    category: "sanitaryBackup",
-    description: "Ремонт на уличен водопровод",
-    start: "6 Юни 2025, 09:00 ч.",
-    end: "6 Юни 2025, 18:00 ч.",
-    timestamp: "2025-06-06T19:16:52.480528",
-  },
-  {
-    source: "Софийска вода",
-    area: "Зона на спиране: кв. Младост 4",
-    type: "Аварийно спиране",
-    category: "sanitaryBackup",
-    description: "Ремонт на уличен водопровод",
-    start: "6 Юни 2025, 09:00 ч.",
-    end: "6 Юни 2025, 18:00 ч.",
-    timestamp: "2025-06-06T19:16:52.480528",
-  },
-];
+// Load data from JSON file
+async function loadOutagesData() {
+  try {
+    // Import the JSON data directly
+    const outagesData = await import("../../../data/water-outages.json");
+    return outagesData.default;
+  } catch (error) {
+    console.error("Error loading JSON data:", error);
+    return [];
+  }
+}
+
+// Transform JSON data to API format
+function transformJsonData(jsonData: any[]): WaterOutage[] {
+  return jsonData.map((item) => {
+    // Format dates
+    const formatDate = (dateString: string) => {
+      try {
+        const date = new Date(dateString);
+        return (
+          date.toLocaleDateString("bg-BG", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }) + " ч."
+        );
+      } catch {
+        return dateString;
+      }
+    };
+
+    return {
+      id: item.id,
+      source: item.source,
+      area:
+        item.affectedArea ||
+        item.location?.address ||
+        item.area ||
+        "Неизвестна зона",
+      type:
+        item.category === "emergency"
+          ? "Аварийно спиране"
+          : "Планирано спиране",
+      category: item.category,
+      description: item.description,
+      start: formatDate(item.startTime),
+      end: formatDate(item.endTime),
+      timestamp: item.startTime,
+      serviceType: item.serviceType || item.type,
+      district: item.location?.district || item.district || "Неизвестен",
+      severity: item.severity || item.priority || "medium",
+    };
+  });
+}
 
 export async function GET(request: Request) {
   try {
-    let data: WaterOutage[] = [];
+    // Load data from JSON file
+    const jsonData = await loadOutagesData();
 
-    // Try to load the JSON file with multiple fallback strategies
-    try {
-      // Method 1: Try dynamic import
-      const outagesModule = await import("../../../data/water-outages.json");
-      data = outagesModule.default as WaterOutage[];
-    } catch (importError) {
-      console.warn("Failed to import JSON file:", importError);
-
-      try {
-        // Method 2: Try reading as text and parsing
-        const fs = await import("fs");
-        const path = await import("path");
-        const filePath = path.join(process.cwd(), "data", "water-outages.json");
-        const fileContent = fs.readFileSync(filePath, "utf8");
-        data = JSON.parse(fileContent) as WaterOutage[];
-      } catch (fsError) {
-        console.warn("Failed to read file with fs:", fsError);
-        // Use fallback data
-        data = fallbackData;
-      }
+    if (!Array.isArray(jsonData) || jsonData.length === 0) {
+      throw new Error("No data found in JSON file");
     }
 
-    // Validate and clean the data
-    const validatedData = data
-      .filter((item) => item && typeof item === "object")
-      .map((item) => ({
-        source: String(item.source || "Неизвестен източник"),
-        area: String(item.area || "Неизвестна зона"),
-        type: String(item.type || ""),
-        category: String(item.category || "unknown"),
-        description: String(item.description || ""),
-        start: String(item.start || ""),
-        end: String(item.end || ""),
-        timestamp: String(item.timestamp || new Date().toISOString()),
-      }));
+    // Transform data to API format
+    const transformedData = transformJsonData(jsonData);
 
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
     const area = searchParams.get("area");
     const type = searchParams.get("type");
 
-    let filteredData = [...validatedData];
+    let filteredData = [...transformedData];
 
     // Apply filters
     if (category && category !== "all") {
@@ -158,18 +147,33 @@ export async function GET(request: Request) {
       data: uniqueOutages,
       total: uniqueOutages.length,
       timestamp: new Date().toISOString(),
-      source: data === fallbackData ? "fallback" : "file",
     });
   } catch (error) {
     console.error("Error in outages API:", error);
 
-    // Return fallback data even in case of complete failure
+    // Return fallback data on error
+    const fallbackData: WaterOutage[] = [
+      {
+        id: "fallback-1",
+        source: "Софийска вода",
+        area: "кв. Център - тестова зона",
+        type: "Аварийно спиране",
+        category: "emergency",
+        description: "Тестово аварийно прекъсване",
+        start: "Днес, 10:00 ч.",
+        end: "Днес, 16:00 ч.",
+        timestamp: new Date().toISOString(),
+        serviceType: "water",
+        district: "Център",
+        severity: "high",
+      },
+    ];
+
     return NextResponse.json({
       success: true,
       data: fallbackData,
       total: fallbackData.length,
       timestamp: new Date().toISOString(),
-      source: "fallback",
       warning:
         "Using fallback data due to error: " +
         (error instanceof Error ? error.message : "Unknown error"),
