@@ -1,20 +1,25 @@
-import type React from "react"
-import type { LightbulbIcon as LucideProps } from "lucide-react"
-import dynamicIconImports from "lucide-react/dynamicIconImports"
-import dynamic from "next/dynamic"
+import React from "react";
+import dynamicIconImports from "lucide-react/dynamicIconImports";
+import dynamic from "next/dynamic";
 
-interface IconProps extends LucideProps {
-  name: keyof typeof dynamicIconImports
-  fallback?: React.ReactNode
+interface IconProps extends React.ComponentProps<"svg"> {
+  name: keyof typeof dynamicIconImports;
+  fallback?: React.ReactNode; // fallback must be ReactNode (element or null)
+  className?: string;
 }
 
 /**
  * Dynamic icon component that loads Lucide icons on demand
  */
-export const Icon = ({ name, fallback, ...props }: IconProps) => {
+export const Icon = ({ name, fallback, className, ...props }: IconProps) => {
   const LucideIcon = dynamic(dynamicIconImports[name], {
-    loading: () => fallback || <div className="w-6 h-6 bg-gray-100 rounded animate-pulse" />,
-  })
+    loading: () =>
+      React.isValidElement(fallback) ? (
+        fallback
+      ) : (
+        <div className="w-6 h-6 bg-gray-100 rounded animate-pulse" />
+      ),
+  });
 
-  return <LucideIcon {...props} />
-}
+  return <LucideIcon className={className} {...props} />;
+};

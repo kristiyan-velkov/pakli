@@ -17,10 +17,12 @@ export interface Outage {
 }
 
 export interface User {
-  id: string;
+  id?: string;
   name: string;
   email: string;
   address: string;
+  password?: string;
+  city: string;
   district: string;
   notifications: boolean;
   emailNotifications: boolean;

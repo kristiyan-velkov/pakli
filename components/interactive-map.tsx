@@ -18,7 +18,7 @@ import {
   Moon,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
-import { sofiaDistricts } from "@/lib/utils";
+import { sofiaDistricts } from "@/constants/sofiaDistricts";
 
 interface Outage {
   id: string;

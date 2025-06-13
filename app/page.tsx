@@ -17,6 +17,7 @@ import InteractiveMap from "@/components/interactive-map";
 import { useState, useRef } from "react";
 import GoogleMaps3D from "@/components/google-maps-3d";
 import { motion } from "framer-motion";
+import Spinner from "@/components/ui/spinner";
 
 interface Outage {
   id: string;
@@ -37,10 +38,10 @@ interface User {
   id: string;
   name: string;
   email: string;
+  city: string;
   address: string;
   district: string;
-  notifications: boolean;
-  emailNotifications: boolean;
+  notifications?: boolean;
 }
 
 export default function SofiaUtilityMonitor() {

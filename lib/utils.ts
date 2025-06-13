@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { Outage } from "./store";
+import { sofiaDistricts } from "@/constants/sofiaDistricts";
 
 /**
  * Combines class names with Tailwind's merge utility
@@ -108,31 +109,7 @@ export function getOutageStatistics(outages: Outage[]) {
   };
 }
 
-/**
- * Sofia districts with approximate coordinates
- */
-export const sofiaDistricts = {
-  Център: { lat: 42.6977, lng: 23.3219, zoom: 15 },
-  Младост: { lat: 42.6506, lng: 23.375, zoom: 14 },
-  Люлин: { lat: 42.7089, lng: 23.2419, zoom: 14 },
-  "Студентски град": { lat: 42.6536, lng: 23.3547, zoom: 15 },
-  Лозенец: { lat: 42.6833, lng: 23.3333, zoom: 15 },
-  Оборище: { lat: 42.7, lng: 23.33, zoom: 15 },
-  Дружба: { lat: 42.6444, lng: 23.3889, zoom: 14 },
-  "Овча купел": { lat: 42.6667, lng: 23.2333, zoom: 14 },
-  "Красно село": { lat: 42.6867, lng: 23.2867, zoom: 14 },
-  "Красна поляна": { lat: 42.7033, lng: 23.2767, zoom: 14 },
-  Витоша: { lat: 42.6333, lng: 23.3, zoom: 14 },
-  Сердика: { lat: 42.7, lng: 23.32, zoom: 15 },
-  Възраждане: { lat: 42.7, lng: 23.31, zoom: 15 },
-  Подуяне: { lat: 42.72, lng: 23.35, zoom: 14 },
-  Слатина: { lat: 42.7, lng: 23.37, zoom: 14 },
-  Илинден: { lat: 42.7167, lng: 23.3, zoom: 14 },
-  Надежда: { lat: 42.73, lng: 23.29, zoom: 14 },
-  Искър: { lat: 42.65, lng: 23.4, zoom: 14 },
-  Панчарево: { lat: 42.5833, lng: 23.4167, zoom: 14 },
-  Банкя: { lat: 42.7167, lng: 23.15, zoom: 14 },
-};
+
 
 /**
  * Get coordinates for an outage based on area text

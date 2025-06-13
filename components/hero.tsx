@@ -1,7 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { useAppStore } from "@/lib/store";
 
 export function Hero() {
+  const user = useAppStore((state) => state.user);
+
+  if (user) return null;
+
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-pink-500 via-purple-500 to-orange-400">
       <div className="absolute inset-0">

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseClient } from "@/lib/supabaseClient";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const type = searchParams.get("type");
   const service = searchParams.get("serviceType");
 
-  let query = supabase
+  let query = supabaseClient
     .from("outages")
     .select("*")
     .eq("active", true)

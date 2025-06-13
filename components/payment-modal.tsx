@@ -1,67 +1,91 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CreditCard, Building2, CheckCircle, Bell, Mail, Shield, Clock, Star, Zap } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  CreditCard,
+  Building2,
+  CheckCircle,
+  Bell,
+  Mail,
+  Shield,
+  Clock,
+  Star,
+  Zap,
+} from "lucide-react";
 
 interface PaymentModalProps {
-  isOpen: boolean
-  onClose: () => void
-  user: any
-  onSuccess: (subscription: any) => void
+  isOpen: boolean;
+  onClose: () => void;
+  user: any;
+  onSuccess: (subscription: any) => void;
 }
 
-export default function PaymentModal({ isOpen, onClose, user, onSuccess }: PaymentModalProps) {
-  const [selectedMethod, setSelectedMethod] = useState<"epay" | "stripe" | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [step, setStep] = useState<"select" | "payment" | "success">("select")
+export default function PaymentModal({
+  isOpen,
+  onClose,
+  user,
+  onSuccess,
+}: PaymentModalProps) {
+  const [selectedMethod, setSelectedMethod] = useState<
+    "epay" | "stripe" | null
+  >(null);
+  const [setLoading] = useState(false);
+  const [step, setStep] = useState<"select" | "payment" | "success">("select");
 
   const handlePayment = async (method: "epay" | "stripe") => {
-    setLoading(true)
-    setSelectedMethod(method)
-    setStep("payment")
+    setLoading(true);
+    setSelectedMethod(method);
+    setStep("payment");
 
     try {
       // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 3000))
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       // Create subscription object
       const subscription = {
         active: true,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        expiresAt: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(), // 30 days from now
         paymentMethod: method,
         amount: 1,
         currency: "BGN",
         startDate: new Date().toISOString(),
-      }
+      };
 
-      setStep("success")
+      setStep("success");
 
       // Wait a bit before calling success
       setTimeout(() => {
-        onSuccess(subscription)
-      }, 2000)
+        onSuccess(subscription);
+      }, 2000);
     } catch (error) {
-      console.error("Payment error:", error)
-      setLoading(false)
-      setStep("select")
+      console.error("Payment error:", error);
+      setLoading(false);
+      setStep("select");
     }
-  }
+  };
 
   const resetModal = () => {
-    setStep("select")
-    setSelectedMethod(null)
-    setLoading(false)
-  }
+    setStep("select");
+    setSelectedMethod(null);
+    setLoading(false);
+  };
 
   const handleClose = () => {
-    resetModal()
-    onClose()
-  }
+    resetModal();
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -88,7 +112,9 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm">Мигновени известия в сайта</span>
+                      <span className="text-sm">
+                        Мигновени известия в сайта
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-600" />
@@ -96,7 +122,9 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm">Персонализирани за вашия квартал</span>
+                      <span className="text-sm">
+                        Персонализирани за вашия квартал
+                      </span>
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -119,18 +147,24 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Месечен абонамент:</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-blue-600">1 лв</span>
+                      <span className="text-2xl font-bold text-blue-600">
+                        1 лв
+                      </span>
                       <Badge variant="secondary">месечно</Badge>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">За квартал: {user?.district} | Автоматично подновяване</p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    За квартал: {user?.district} | Автоматично подновяване
+                  </p>
                 </div>
               </CardContent>
             </Card>
 
             {/* Payment Methods */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-center">Изберете начин на плащане</h3>
+              <h3 className="text-lg font-semibold text-center">
+                Изберете начин на плащане
+              </h3>
 
               {/* ePay.bg */}
               <Card
@@ -145,7 +179,9 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
                       </div>
                       <div>
                         <h4 className="font-semibold text-lg">ePay.bg</h4>
-                        <p className="text-sm text-gray-600">Всички български банки</p>
+                        <p className="text-sm text-gray-600">
+                          Всички български банки
+                        </p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">
                             УниКредит
@@ -163,7 +199,9 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
                       </div>
                     </div>
                     <div className="text-right">
-                      <Badge className="bg-green-100 text-green-800">Препоръчано</Badge>
+                      <Badge className="bg-green-100 text-green-800">
+                        Препоръчано
+                      </Badge>
                       <p className="text-xs text-gray-500 mt-1">Без такси</p>
                     </div>
                   </div>
@@ -183,7 +221,9 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
                       </div>
                       <div>
                         <h4 className="font-semibold text-lg">Банкова карта</h4>
-                        <p className="text-sm text-gray-600">Visa, Mastercard, Maestro</p>
+                        <p className="text-sm text-gray-600">
+                          Visa, Mastercard, Maestro
+                        </p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">
                             Visa
@@ -199,7 +239,9 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
                     </div>
                     <div className="text-right">
                       <Badge variant="secondary">Международно</Badge>
-                      <p className="text-xs text-gray-500 mt-1">Сигурно плащане</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Сигурно плащане
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -210,8 +252,8 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
             <Alert className="border-green-200 bg-green-50">
               <Shield className="h-4 w-4" />
               <AlertDescription className="text-green-800">
-                <strong>Сигурност:</strong> Всички плащания са защитени с SSL криптиране. Не съхраняваме данни от вашите
-                карти.
+                <strong>Сигурност:</strong> Всички плащания са защитени с SSL
+                криптиране. Не съхраняваме данни от вашите карти.
               </AlertDescription>
             </Alert>
 
@@ -228,9 +270,13 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
           <div className="space-y-6">
             <div className="text-center">
               <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <h3 className="text-xl font-semibold mb-2">Обработване на плащането</h3>
+              <h3 className="text-xl font-semibold mb-2">
+                Обработване на плащането
+              </h3>
               <p className="text-gray-600">
-                {selectedMethod === "epay" ? "Пренасочване към ePay.bg..." : "Обработване на картовото плащане..."}
+                {selectedMethod === "epay"
+                  ? "Пренасочване към ePay.bg..."
+                  : "Обработване на картовото плащане..."}
               </p>
             </div>
 
@@ -245,7 +291,9 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
 
             <Alert>
               <Clock className="h-4 w-4" />
-              <AlertDescription>Моля, не затваряйте този прозорец докато плащането не приключи.</AlertDescription>
+              <AlertDescription>
+                Моля, не затваряйте този прозорец докато плащането не приключи.
+              </AlertDescription>
             </Alert>
           </div>
         )}
@@ -257,8 +305,12 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
             </div>
 
             <div>
-              <h3 className="text-2xl font-bold text-green-800 mb-2">Плащането е успешно!</h3>
-              <p className="text-gray-600">Известията са активирани за вашия квартал</p>
+              <h3 className="text-2xl font-bold text-green-800 mb-2">
+                Плащането е успешно!
+              </h3>
+              <p className="text-gray-600">
+                Известията са активирани за вашия квартал
+              </p>
             </div>
 
             <Card className="bg-green-50 border-green-200">
@@ -275,7 +327,9 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
                   <div className="flex items-center justify-between">
                     <span>Валиден до:</span>
                     <span className="font-medium">
-                      {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("bg-BG")}
+                      {new Date(
+                        Date.now() + 30 * 24 * 60 * 60 * 1000
+                      ).toLocaleDateString("bg-BG")}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -308,5 +362,5 @@ export default function PaymentModal({ isOpen, onClose, user, onSuccess }: Payme
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }
