@@ -1,8 +1,8 @@
 "use server";
 
-import { User } from "@/lib/store";
-import { supabaseAdminClient } from "@/lib/supabaseAdminClient";
-import { supabaseClient } from "@/lib/supabaseClient";
+import type { User } from "@/lib/store/types";
+import { supabaseAdminClient } from "@/lib/supabase/supabaseAdminClient";
+import { supabaseClient } from "@/lib/supabase/supabaseClient";
 
 export async function registerUserAction(user: User): Promise<Partial<User>> {
     if (!user.email || !user.password) {
@@ -26,11 +26,11 @@ export async function registerUserAction(user: User): Promise<Partial<User>> {
         .from("user_profile")
         .insert({
             id: authUser.user.id,
-            address: user.address || "",
-            district: user.district || "",
-            notifications: user.notifications || false,
+            address: user.address ?? "",
+            district: user.district ?? "",
+            notifications: user.notifications ?? false,
             city: user.city ?? "",
-            email_notifications: user.emailNotifications || false,
+            email_notifications: user.emailNotifications ?? false,
         })
         .select("*")
         .single();

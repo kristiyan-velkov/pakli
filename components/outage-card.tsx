@@ -8,9 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
-import type { Outage } from "@/lib/store";
-import { getServiceIconName, getServiceName } from "@/lib/utils";
 import clsx from "clsx";
+import { getServiceName } from "@/lib/utils/outage";
 
 interface OutageCardProps {
   outage: Outage;
@@ -429,4 +428,7 @@ export function OutageCard({
       </Card>
     </motion.div>
   );
+}
+function getServiceIconName(serviceType: any) {
+  throw new Error("Function not implemented.");
 }

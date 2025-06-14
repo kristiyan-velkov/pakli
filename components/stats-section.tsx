@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
-import { getOutageStatistics } from "@/lib/utils";
+import { getOutageStatistics } from "@/lib/utils/outage";
 import { motion } from "framer-motion";
 import {
   XCircle,

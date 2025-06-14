@@ -4,13 +4,10 @@ import dynamic from "next/dynamic";
 
 interface IconProps extends React.ComponentProps<"svg"> {
   name: keyof typeof dynamicIconImports;
-  fallback?: React.ReactNode; // fallback must be ReactNode (element or null)
+  fallback?: React.ReactNode;
   className?: string;
 }
 
-/**
- * Dynamic icon component that loads Lucide icons on demand
- */
 export const Icon = ({ name, fallback, className, ...props }: IconProps) => {
   const LucideIcon = dynamic(dynamicIconImports[name], {
     loading: () =>

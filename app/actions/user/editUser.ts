@@ -1,7 +1,8 @@
 "use server";
 
-import { useAppStore, User } from "@/lib/store";
-import { supabaseClient } from "@/lib/supabaseClient";
+import { useAppStore } from "@/lib/store";
+import type { User } from "@/lib/store/types";
+import { supabaseClient } from "@/lib/supabase/supabaseClient";
 
 export async function editUser(user: Partial<User> & { id: string }): Promise<Partial<User>> {
     if (!user.id) throw new Error("User ID is required");

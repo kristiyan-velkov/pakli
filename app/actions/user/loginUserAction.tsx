@@ -1,8 +1,7 @@
 "use server";
 
 import { getUserProfile } from "@/lib/getters/getUserProfile";
-import { User } from "@/lib/store";
-import { supabaseClient } from "@/lib/supabaseClient";
+import { supabaseClient } from "@/lib/supabase/supabaseClient";
 
 interface LoginInput {
   email: string;

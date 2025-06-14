@@ -1,4 +1,4 @@
-import { Outage } from "../store";
+import { Outage } from "../store/store.ts2";
 
 export async function getOutages(): Promise<Outage[]> {
     try {

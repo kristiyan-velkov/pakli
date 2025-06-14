@@ -1,5 +1,5 @@
-import { User } from "../store";
-import { supabaseClient } from "../supabaseClient";
+import { User } from "../store/store.ts2";
+import { supabaseClient } from "../supabase/supabaseClient";
 
  export const getUserProfile = async (userId: string): Promise<Partial<User> | undefined> => {
     try {

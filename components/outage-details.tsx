@@ -3,14 +3,15 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import type { Outage } from "@/lib/store";
+
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { Outage } from "@/lib/store/types";
 import {
   getServiceColor,
   getServiceIconName,
   getServiceName,
-} from "@/lib/utils";
-import { motion } from "framer-motion";
-import { useState } from "react";
+} from "@/lib/utils/outage";
 
 interface OutageDetailsProps {
   outage: Outage;

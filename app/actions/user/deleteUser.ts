@@ -1,5 +1,5 @@
 import { useAppStore } from "@/lib/store";
-import { supabaseClient } from "@/lib/supabaseClient";
+import { supabaseClient } from "@/lib/supabase/supabaseClient";
 
 export async function deleteUser(id: string): Promise<void> {
     if (!id) throw new Error("User ID is required");

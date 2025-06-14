@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { useAppStore } from "@/lib/store";
-import { getServiceName } from "@/lib/utils";
+import { getServiceName } from "@/lib/utils/outage";
 
 export function ActiveFilters() {
   const {

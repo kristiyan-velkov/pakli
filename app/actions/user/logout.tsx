@@ -1,6 +1,6 @@
 "use server";
 
-import { supabaseClient } from "@/lib/supabaseClient";
+import { supabaseClient } from "@/lib/supabase/supabaseClient";
 
 export async function logout() {
   const { error } = await supabaseClient.auth.signOut();

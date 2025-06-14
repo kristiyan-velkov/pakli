@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseClient } from "@/lib/supabaseClient";
+import { supabaseClient } from "@/lib/supabase/supabaseClient";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { useAppStore } from "@/lib/store";

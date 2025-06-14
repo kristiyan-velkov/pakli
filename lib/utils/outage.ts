@@ -1,13 +1,74 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-import type { Outage } from "./store";
-import { sofiaDistricts } from "@/constants/sofiaDistricts";
+import { Outage, ServiceType, Severity } from "../store/types";
 
-/**
- * Combines class names with Tailwind's merge utility
- */
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+export function transformApiToOutage(apiData: any): Outage {
+  const rawServiceType =
+    apiData.serviceType || apiData.service_type || apiData.type || ServiceType.Water;
+
+  const serviceType = Object.values(ServiceType).includes(rawServiceType)
+    ? rawServiceType
+    : ServiceType.Water;
+
+  const severity = Object.values(Severity).includes(apiData.severity)
+    ? apiData.severity
+    : apiData.priority ?? Severity.Medium;
+
+  return {
+    id: apiData.id,
+    source: apiData.source,
+    area: apiData.affectedArea ?? apiData.location?.address ?? apiData.area ?? "Неизвестна зона",
+    type: apiData.category === "emergency" ? "Аварийно спиране" : "Планирано спиране",
+    category: apiData.category,
+    description: apiData.description,
+    start: apiData.startTime,
+    end: apiData.endTime,
+    timestamp: apiData.startTime,
+    serviceType: serviceType as ServiceType,
+    district: apiData.location?.district ?? apiData.district ?? "Неизвестен",
+    severity: severity as Severity,
+  };
+}
+
+export function filterOutages(
+  outages: Outage[],
+  user: User | null,
+  filters: FilterState,
+  subscription: Subscription | null
+): { filtered: Outage[]; notifications: Outage[] } {
+  const { selectedService, selectedCategory, selectedType, searchQuery, showOnlyUserDistrict } = filters;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const filtered = outages.filter((outage) => {
+    if (
+      user &&
+      showOnlyUserDistrict &&
+      outage.district.toLowerCase() !== user.district.toLowerCase()
+    )
+      return false;
+    if (
+      normalizedQuery &&
+      !outage.area.toLowerCase().includes(normalizedQuery) &&
+      !outage.description.toLowerCase().includes(normalizedQuery) &&
+      !outage.district.toLowerCase().includes(normalizedQuery)
+    )
+      return false;
+    if (selectedService !== "all" && outage.serviceType !== selectedService) return false;
+    if (selectedCategory !== "all" && outage.category !== selectedCategory) return false;
+    const isEmergency = outage.type.toLowerCase().includes("аварийно");
+    if (selectedType === "emergency" && !isEmergency) return false;
+    if (selectedType === "scheduled" && isEmergency) return false;
+    return true;
+  });
+
+  const notifications =
+    user && subscription?.active
+      ? filtered.filter(
+          (o) =>
+            o.district.toLowerCase() === user.district.toLowerCase() &&
+            o.severity === Severity.High
+        )
+      : [];
+
+  return { filtered, notifications };
 }
 
 /**
