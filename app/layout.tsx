@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 }) {
   return (
     <html lang="bg">
@@ -32,6 +33,22 @@ export default function RootLayout({
           src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"
           integrity="sha384-cJpbHTbfOVBHOzrE4gMSSa+cp3NQUXGjA8opVLvT7gCm1jLgyd++6jSTOOpNlB1V"
           strategy="lazyOnload"
+        />
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          toastOptions={{
+            duration: 3000,
+            closeButton: true,
+            className: "bg-white text-black shadow-lg",
+            style: {
+              borderRadius: "8px",
+              padding: "12px 16px",
+              fontSize: "14px",
+              fontFamily: "Inter, sans-serif",
+            },
+          }}
         />
       </body>
     </html>

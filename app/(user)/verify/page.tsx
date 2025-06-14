@@ -6,7 +6,7 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { useAppStore } from "@/lib/store";
-import { fetchUserProfile } from "@/lib/fetchUserProfile";
+import { getUserProfile } from "@/lib/getters/getUserProfile";
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -59,7 +59,7 @@ export default function VerifyPage() {
         });
 
         try {
-          const profile = await fetchUserProfile(user.id);
+          const profile = await getUserProfile(user.id);
           if (profile) {
             setUser((current) => ({
               ...current!,

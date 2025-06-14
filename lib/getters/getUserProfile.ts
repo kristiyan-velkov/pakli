@@ -1,7 +1,7 @@
-import { User } from "./store";
-import { supabaseClient } from "./supabaseClient";
+import { User } from "../store";
+import { supabaseClient } from "../supabaseClient";
 
- export const fetchUserProfile = async (userId: string): Promise<Partial<User> | undefined> => {
+ export const getUserProfile = async (userId: string): Promise<Partial<User> | undefined> => {
     try {
       const { data, error } = await supabaseClient
         .from("user_profile")

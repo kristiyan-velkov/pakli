@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LoginForm from "./login-form";
-import RegisterForm from "./register-form";
+import RegisterForm from "./registration-form";
 
 interface AuthModalProps {
   isOpen: boolean;

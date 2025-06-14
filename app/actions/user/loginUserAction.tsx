@@ -1,6 +1,6 @@
 "use server";
 
-import { fetchUserProfile } from "@/lib/fetchUserProfile";
+import { getUserProfile } from "@/lib/getters/getUserProfile";
 import { User } from "@/lib/store";
 import { supabaseClient } from "@/lib/supabaseClient";
 
@@ -26,7 +26,7 @@ export async function loginUserAction({
   if (!data.user) throw new Error("User not found after login.");
 
   try {
-    const profileData = await fetchUserProfile(data.user.id);
+    const profileData = await getUserProfile(data.user.id);
 
     return {
       id: data.user.id,

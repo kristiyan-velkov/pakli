@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/ui/logo";
 import LoginForm from "@/components/user-login/login-form";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
@@ -17,9 +18,6 @@ export const metadata = {
     index: true,
     follow: true,
   },
-  viewport: "width=device-width, initial-scale=1",
-  themeColor: "#ffffff",
-  colorScheme: "light",
   appleWebApp: {
     capable: true,
     title: "Login | Pakli",
@@ -37,9 +35,12 @@ export default function LoginPage() {
           <Logo />
         </div>
         <div className="flex items-center gap-4">
-          <p className="text-sm text-gray-700 hidden md:flex">Нямате акаунт?</p>
-          <Button variant="default" className="text-sm">
-            Регистрaция
+          <p className="text-sm hidden md:flex items-center gap-1 bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500 bg-clip-text text-transparent font-semibold">
+            Вашият надежден източник за аварии и прекъсвания!{" "}
+            <ArrowRight className="ml-1 animate-pulse text-black" size={20} />
+          </p>
+          <Button variant="default" className="text-sm" asChild>
+            <Link href="/signup">Регистрaция</Link>
           </Button>
         </div>
       </header>
@@ -58,7 +59,7 @@ export default function LoginPage() {
             <h1 className="text-3xl font-bold mb-10 text-center select-none text-black">
               Вход в <strong className="text-blue-600">Pakli.bg</strong>
               <span className="text-sm text-gray-400 block mt-4">
-                Най-добрият сайт за следене на аварии и прекъсвания в България
+                Следи аварии и прекъсвания лесно и бързо.
               </span>
             </h1>
             <LoginForm />
@@ -66,7 +67,8 @@ export default function LoginPage() {
               <p className="mt-4 text-center text-sm select-none text-gray-600">
                 Нямате акаунт?{" "}
                 <Link
-                  href="/register"
+                  href="/signup"
+                  prefetch={false}
                   className="text-blue-500 underline hover:text-blue-600 transition-colors duration-200 select-none"
                 >
                   Регистрaция

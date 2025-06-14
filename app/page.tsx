@@ -17,7 +17,6 @@ import InteractiveMap from "@/components/interactive-map";
 import { useState, useRef } from "react";
 import GoogleMaps3D from "@/components/google-maps-3d";
 import { motion } from "framer-motion";
-import Spinner from "@/components/ui/spinner";
 
 interface Outage {
   id: string;
@@ -59,10 +58,8 @@ export default function SofiaUtilityMonitor() {
     applyFilters,
   } = useAppStore();
 
-  // Fetch outages on component mount
   useEffect(() => {
     fetchOutages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Apply filters when user or filters change

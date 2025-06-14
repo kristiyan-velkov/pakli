@@ -161,6 +161,7 @@ export default function LoginForm() {
           className="w-full flex justify-center items-center gap-2"
         >
           {loading ? "Влизане..." : "Влез"}
+          <Lock className="h-4 w-4" />
         </Button>
       </form>
     </>
